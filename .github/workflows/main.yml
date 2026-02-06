@@ -7,18 +7,14 @@ on:
 
 env:
   ACR_LOGIN_SERVER: m324demoacrqba.azurecr.io
-  IMAGE_NAME: mon-image
+  IMAGE_NAME: mini-notes
 
 jobs:
-  build-docker:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ env.IMAGE_NAME }}:latest .
 
       - name: Login ACR
         uses: azure/docker-login@v2
@@ -27,9 +23,10 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }}:latest .
+
       - name: Tag + Push Docker image to ACR
         run: |
           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
