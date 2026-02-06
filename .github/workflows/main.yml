@@ -3,9 +3,11 @@ name: CI - Docker Push ACR
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 env:
   ACR_LOGIN_SERVER: m324demoacrqba.azurecr.io
+  IMAGE_NAME: mon-image
 
 jobs:
   build-docker:
@@ -15,7 +17,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t mon-image .
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:latest .
 
       - name: Login ACR
         uses: azure/docker-login@v2
@@ -24,7 +27,9 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Push Docker image to ACR
+      - name: Tag + Push Docker image to ACR
         run: |
-          docker tag mon-image:latest ${{ env.ACR_LOGIN_SERVER }}/mon-image:latest
-          docker push ${{ env.ACR_LOGIN_SERVER }}/mon-image:latest
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
