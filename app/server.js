@@ -45,6 +45,9 @@ app.get("/", (req, res) => {
       <body>
         <main class="container">
           <h1>Mini Notes</h1>
+
+          <h1>Notes de test pour commit les changements pour test github action</h1>
+
           <form method="post" action="/notes" class="note-form">
             <input name="text" placeholder="Nouvelle note..." required />
             <button>Ajouter</button>

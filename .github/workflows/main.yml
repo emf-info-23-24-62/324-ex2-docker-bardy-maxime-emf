@@ -1,50 +1,30 @@
-name: CI/CD
+name: CI - Docker Push ACR
 
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: m324demoacrqba.azurecr.io
 
 jobs:
-  node:
-    name: Node
+  build-docker:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./app
-
     steps:
-      - name: Récupérer le code
+      - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Installer Node.js
-        uses: actions/setup-node@v4
+      - name: Build Docker image
+        run: docker build -t mon-image .
+
+      - name: Login ACR
+        uses: azure/docker-login@v2
         with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: ./app/package-lock.json
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Installer les dépendances
+      - name: Push Docker image to ACR
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-  docker:
-    name: Docker (build + vérif compose)
-    runs-on: ubuntu-latest
-    needs: node
-
-    steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
-
-      - name: Build de l'image Docker
-        run: docker build -t ci-image:latest .
-
-      - name: Vérifier docker-compose.yml
-        run: docker compose -f docker-compose.yml config
+          docker tag mon-image:latest ${{ env.ACR_LOGIN_SERVER }}/mon-image:latest
+          docker push ${{ env.ACR_LOGIN_SERVER }}/mon-image:latest
